@@ -4,6 +4,8 @@ from linebot import LineBotApi, WebhookHandler
 from linebot.exceptions import InvalidSignatureError
 from linebot.models import MessageEvent, TextMessage, TextSendMessage
 
+import app.postgresql as postgre
+
 import os
 
 from app.Role import User,Agent
@@ -11,6 +13,8 @@ import app.Chat as Chat
 import app.Model as Model
 
 app = FastAPI()
+
+postgre.create_tables()
 
 line_bot_api = LineBotApi(os.environ.get("LINE_ACCESS_TOKEN"))
 handler = WebhookHandler(os.environ.get("LINE_CHANNEL_SECRET")) 
