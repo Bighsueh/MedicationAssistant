@@ -1,0 +1,65 @@
+version: "3"
+
+services:
+  line:
+    build: .
+    container_name: line_fastapi_container
+    environment:
+      MONGODB_HOST: "line_mongodb_container"
+      MONGODB_DATABASE: "conversationdb"
+      MONGODB_COLLECTION: "learning_companion"
+      LINE_ACCESS_TOKEN: "owrG9RPGLQp700dvg83WpB/bkM47ceRcAykEirV2J3XZpj3OsZoqW7n8DxFFniPjRWeDw6FWRrEnJyR7BII4NDgdelCMicIHS55CXdEG+7oOIYwmWAIwBN1T1CKJ8HHFuGvpYt978UxWHiwACqrneAdB04t89/1O/w1cDnyilFU="
+      LINE_CHANNEL_SECRET: "762d42bc5fbad7f677d85b46aa8a5502"
+      GPT_API_URL: "https://model.hsueh.tw/callapi/chatGPT"
+      DATABASE_URL: "postgresql://postgres:1234@line_postgres_container:5432/postgres"
+      
+    volumes:
+      - ./main.py:/app/main.py
+    ports:
+      - "25000:25000"
+    depends_on:
+      - mongodb
+      - postgres      
+    networks:
+      - line_agent_network
+
+  mongodb:
+    image: mongo
+    container_name: line_mongodb_container
+    ports:
+      - "27018:27017"
+    networks:
+      - line_agent_network
+
+  postgres:
+    image: postgres
+    container_name: line_postgres_container
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: 1234
+      POSTGRES_DB: postgres
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    networks:
+      - line_agent_network
+  
+  pgadmin:
+    image: dpage/pgadmin4
+    container_name: line_pgadmin_container
+    environment:
+      PGADMIN_DEFAULT_EMAIL: "0932283947a@gmail.com"
+      PGADMIN_DEFAULT_PASSWORD: "admin"
+    ports:
+      - "5050:80"
+    depends_on:
+      - postgres
+    networks:
+      - line_agent_network
+
+volumes:
+  postgres_data:
+
+networks:
+  line_agent_network:
