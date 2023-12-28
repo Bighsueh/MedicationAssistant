@@ -18,8 +18,7 @@ services:
     ports:
       - "25000:25000"
     depends_on:
-      - mongodb
-      - postgres      
+      - mongodb      
     networks:
       - line_agent_network
 
