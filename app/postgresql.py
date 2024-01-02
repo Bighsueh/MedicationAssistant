@@ -45,7 +45,8 @@ from sqlalchemy.sql import func
 import os
 
 DATABASE_URL = os.environ.get("DATABASE_URL")
-# DATABASE_URL='postgresql://postgres:0921457822@localhost:5432/postgres'
+#DATABASE_URL='postgresql://postgres:0921457822@localhost:5432/postgres'
+#DATABASE_URL='postgresql://postgres:1234@localhost:5432/aitest'
 
 # 創建資料庫引擎
 engine = create_engine(DATABASE_URL)

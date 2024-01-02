@@ -18,6 +18,9 @@ postgre.create_tables()
 
 line_bot_api = LineBotApi(os.environ.get("LINE_ACCESS_TOKEN"))
 handler = WebhookHandler(os.environ.get("LINE_CHANNEL_SECRET")) 
+# line_bot_api = LineBotApi('fcifERiOlL1tXOldxV1nVoBsrzuWjaF+LZ7W75D4JmMJtjFf3UAZoGWI7qpSLBybK1EKINUTsAHibFVebKJzZxkbac6xdhZ6MHTfXh5wlyO4jMtzAy1QsiuQ8a6gf7WXFUqbZ2xPFVp0eKVoHuKoKQdB04t89/1O/w1cDnyilFU=')
+# handler = WebhookHandler('95f8ea74a89132626f6756564aa977ec')
+
 
 # Line Bot config
 @app.get("/")
