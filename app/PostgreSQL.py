@@ -26,10 +26,10 @@ class PostgreSQLConnector:
 
 """
 # 使用範例
-db_url = 
+import app.PostgreSQL as PostgreSQL
 
 # 創建 PostgreSQLConnector 實例
-pg_connector = PostgreSQLConnector()
+pg_connector = PostgreSQL.PostgreSQLConnector()
 
 # 連接到數據庫
 pg_connector.connect()
