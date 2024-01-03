@@ -1,50 +1,51 @@
-from sqlalchemy import create_engine, Column, BigInteger, String, DateTime, ForeignKey, Date, Boolean
-from sqlalchemy.orm import declarative_base, relationship
-from sqlalchemy.sql import func
+import psycopg2
 import os
 
-DATABASE_URL = os.environ.get("DATABASE_URL")
-#DATABASE_URL='postgresql://postgres:0921457822@localhost:5432/postgres'
-#DATABASE_URL='postgresql://postgres:1234@localhost:5432/aitest'
+class PostgreSQLConnector:
+    def __init__(self):
+        self.db_url = os.environ.get('DATABASE_URL')
+        self.conn = None
+        self.cursor = None
 
-# 創建資料庫引擎
-engine = create_engine(DATABASE_URL)
+    def connect(self):
+        self.conn = psycopg2.connect(self.db_url)
+        self.cursor = self.conn.cursor()
 
-# 声明基底
-Base = declarative_base()
+    def execute_query(self, sql_query):
+        self.cursor.execute(sql_query)
 
-class MedicationRecord(Base):
-    __tablename__ = "medication_records"
+    def fetch_all(self):
+        return self.cursor.fetchall()
 
-    record_id = Column(BigInteger, primary_key=True, autoincrement=True, index=True)
-    user_id = Column(String(50))
-    redate = Column(Date, default=None)
-    pres_hosp = Column(String(255), default=None)
-    created_at = Column(DateTime(timezone=True), server_default=func.now())
-    updated_at = Column(DateTime(timezone=True), onupdate=func.now())
-    #medication_record_details = relationship("MedicationRecordDetail", back_populates="medication_record")
+    def commit_changes(self):
+        self.conn.commit()
 
-class MedicationRecordDetail(Base):
-    __tablename__ = "medication_record_detail"
+    def close_connection(self):
+        self.cursor.close()
+        self.conn.close()
 
-    detail_id = Column(BigInteger, primary_key=True, autoincrement=True, index=True)
-    record_id = Column(BigInteger, ForeignKey("medication_records.record_id"))
-    trade_name = Column(String(255), default=None)
-    generic_name = Column(String(255), default=None)
-    # dose = Column(String(255), default=None)
-    dose_per_unit = Column(String(255), default=None)
-    dose_per_time = Column(String(255), default=None)
-    dose_per_day = Column(String(255), default=None)
-    # freq = Column(String(255), default=None)
-    day_limit = Column(String(255), default=None)
-    morning =  Column(Boolean, default=False)
-    noon = Column(Boolean, default=False)
-    night = Column(Boolean, default=False)
-    bed = Column(Boolean, default=False)
-    created_at = Column(DateTime(timezone=True), server_default=func.now())
-    updated_at = Column(DateTime(timezone=True), onupdate=func.now())
-    medication_record = relationship("MedicationRecord", back_populates="medication_record_details")
+"""
+# 使用範例
+import app.PostgreSQL as PostgreSQL
 
-# 在資料庫中創建資料表
-def create_tables():
-    Base.metadata.create_all(engine)
+# 創建 PostgreSQLConnector 實例
+pg_connector = PostgreSQL.PostgreSQLConnector()
+
+# 連接到數據庫
+pg_connector.connect()
+
+# 執行 SQL 查詢
+sql_query = "SELECT * FROM medication_record;"
+pg_connector.execute_query(sql_query)
+
+# 獲取查詢結果
+result = pg_connector.fetch_all()
+print("Query Result:")
+print(result)
+
+# 如果需要提交更改，例如插入、更新或删除操作
+# pg_connector.commit_changes()
+
+# 關閉連接
+pg_connector.close_connection()
+"""

@@ -16,15 +16,16 @@ import app.Model as Model
 from app.PostgreModel import save_record_to_database, save_record_detail_to_db
 import json
 from app.OCRreal import ocr_photo
-from app.SendPhoto import send_image, token, user_id, image_urls, text_message
+from app.SendPhoto import send_image, token, user_id, image_urls,get_medication_reminders
 import random
-
+import datetime
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 
 
-def send_random_image_task():
-    random_image_url = random.choice(image_urls)  # 隨機選擇一個圖片URL
-    send_image(token, user_id, random_image_url, text_message)
+
+# def send_random_image_task():
+#     random_image_url = random.choice(image_urls)  # 隨機選擇一個圖片URL
+#     send_image(token, user_id, random_image_url, text_message)
 
 app = FastAPI()
 scheduler = AsyncIOScheduler()
@@ -33,15 +34,23 @@ app.mount("/static", StaticFiles(directory="static"), name="static")
 
 line_bot_api = LineBotApi(os.environ.get("LINE_ACCESS_TOKEN"))
 handler = WebhookHandler(os.environ.get("LINE_CHANNEL_SECRET")) 
-# line_bot_api = LineBotApi('fcifERiOlL1tXOldxV1nVoBsrzuWjaF+LZ7W75D4JmMJtjFf3UAZoGWI7qpSLBybK1EKINUTsAHibFVebKJzZxkbac6xdhZ6MHTfXh5wlyO4jMtzAy1QsiuQ8a6gf7WXFUqbZ2xPFVp0eKVoHuKoKQdB04t89/1O/w1cDnyilFU=')
-# handler = WebhookHandler('95f8ea74a89132626f6756564aa977ec')
 
+
+user_id = 'U7b5193a3df666538893034f6d82bb30c'
+def check_and_send_medication_reminders():
+    # 要執行的任務
+    current_hour = datetime.datetime.now().hour
+    # 根據當前時間點（8, 12, 18, 24）確定是否需要發送提醒
+    if current_hour in [8, 12, 18, 24]:
+        # 獲取用藥提醒
+        get_medication_reminders()
+        pass
 
 @app.on_event("startup")
 async def startup_event():
     # 在啟動時添加定時任務
     # 每小時執行一次檢查
-    scheduler.add_job(send_random_image_task, 'interval', minutes=2)
+    scheduler.add_job(check_and_send_medication_reminders,'cron', hour='8,12,18,24')
     scheduler.start()
 
 # Line Bot config
