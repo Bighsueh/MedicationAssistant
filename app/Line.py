@@ -1,8 +1,12 @@
-from fastapi import FastAPI, Request, HTTPException
+from fastapi import FastAPI, Request, HTTPException, File, UploadFile
 from fastapi.responses import FileResponse
 from linebot import LineBotApi, WebhookHandler
 from linebot.exceptions import InvalidSignatureError
 from linebot.models import MessageEvent, TextMessage, TextSendMessage, ImageMessage,ImageSendMessage
+
+from fastapi.staticfiles import StaticFiles
+from apscheduler.schedulers.background import BackgroundScheduler
+from apscheduler.schedulers.asyncio import AsyncIOScheduler
 
 import requests
 import os
@@ -10,14 +14,39 @@ import os
 from app.Role import User,Agent
 import app.Chat as Chat
 import app.Model as Model
+
 from app.MedicationHandler import MedicationHandler
 import json
 from app.OCRreal import ocr_photo
 
+from app.PostgreModel import save_record_to_database, save_record_detail_to_db
+from app.SendPhoto import send_image, token, user_id, image_urls, text_message
+import random
+
+from apscheduler.schedulers.asyncio import AsyncIOScheduler
+
+
+def send_random_image_task():
+    random_image_url = random.choice(image_urls)  # 隨機選擇一個圖片URL
+    send_image(token, user_id, random_image_url, text_message)
+
 app = FastAPI()
+scheduler = AsyncIOScheduler()
+# 設定靜態文件目錄，這樣 FastAPI 才知道從哪裡提供文件
+app.mount("/static", StaticFiles(directory="static"), name="static")
 
 line_bot_api = LineBotApi(os.environ.get("LINE_ACCESS_TOKEN"))
 handler = WebhookHandler(os.environ.get("LINE_CHANNEL_SECRET")) 
+# line_bot_api = LineBotApi('fcifERiOlL1tXOldxV1nVoBsrzuWjaF+LZ7W75D4JmMJtjFf3UAZoGWI7qpSLBybK1EKINUTsAHibFVebKJzZxkbac6xdhZ6MHTfXh5wlyO4jMtzAy1QsiuQ8a6gf7WXFUqbZ2xPFVp0eKVoHuKoKQdB04t89/1O/w1cDnyilFU=')
+# handler = WebhookHandler('95f8ea74a89132626f6756564aa977ec')
+
+
+@app.on_event("startup")
+async def startup_event():
+    # 在啟動時添加定時任務
+    # 每小時執行一次檢查
+    scheduler.add_job(send_random_image_task, 'interval', minutes=2)
+    scheduler.start()
 
 rag_endpoint = os.environ.get("RAG_ENDPOINT")
 # line_bot_api = LineBotApi('fcifERiOlL1tXOldxV1nVoBsrzuWjaF+LZ7W75D4JmMJtjFf3UAZoGWI7qpSLBybK1EKINUTsAHibFVebKJzZxkbac6xdhZ6MHTfXh5wlyO4jMtzAy1QsiuQ8a6gf7WXFUqbZ2xPFVp0eKVoHuKoKQdB04t89/1O/w1cDnyilFU=')
@@ -36,47 +65,9 @@ async def say_hello(name: str):
 
 @app.get('/getfile/<filename>')
 def get_file(filename):
-    file_path = f"./{filename}"
+    file_path = f"./static/{filename}"
+    print(file_path)
     return FileResponse(file_path)
-
-
-# @app.post("/callback")
-# async def callback(request: Request):
-#     signature = request.headers["X-Line-Signature"]
-#     body = await request.body()
-#     print(body)
-#     #body = request.get_data(as_text=True)                    # 取得收到的訊息內容
-#     try:
-#         json_data = json.loads(body)                         # json 格式化訊息內容
-#         print(body)
-#         tk = json_data['events'][0]['replyToken']            # 取得回傳訊息的 Token
-#         type = json_data['events'][0]['message']['type']     # 取得 LINE 收到的訊息類型
-#         # 判斷如果是文字
-#         if type=='text':
-#             msg = json_data['events'][0]['message']['text']  # 取得 LINE 收到的文字訊息
-#             line_id = json_data['destination']
-#             #save_image_to_database(str(msg), str(line_id))
-#             reply = msg
-#         # 判斷如果是圖片
-#         elif type == 'image':
-#             msgID = json_data['events'][0]['message']['id']  # 取得訊息 id
-#             message_content = line_bot_api.get_message_content(msgID)  # 根據訊息 ID 取得訊息內容
-#             # 在同樣的資料夾中建立以訊息 ID 為檔名的 .jpg 檔案
-#             with open(f'{msgID}.jpg', 'wb') as fd:
-#                 fd.write(message_content.content)             # 以二進位的方式寫入檔案
-#             #save_image_to_database(msgID)
-#             reply = str(ocr_photo(f"https://5d18-140-115-126-172.ngrok-free.app/getfile/{msgID}.jpg"))
-
-#             #reply = '圖片儲存完成！'                             # 設定要回傳的訊息
-#         else:
-#             reply = '你傳的不是文字或圖片呦～'
-#         print(reply)
-#         line_bot_api.reply_message(tk,TextSendMessage(reply))  # 回傳訊息
-#     except Exception as e:
-#         print(f"Error: {e}")                                          # 如果發生錯誤，印出收到的內容
-#     return 'OK'              
-    
-
 
 @app.post("/callback")
 async def callback(request: Request):
@@ -91,7 +82,6 @@ async def callback(request: Request):
 
 @handler.add(MessageEvent, message=ImageMessage)
 def handling_messages(event):
-    print(event)
     if isinstance(event.message, ImageMessage):
         # line user id
         userId = event.source.user_id
@@ -105,33 +95,21 @@ def handling_messages(event):
         image_filename = f"{userId}_image.jpg"  
         with open(image_filename, "wb") as file:
             file.write(image_data)
+        image_filename = f"static/{event.message.id}.jpg"  
+        #image_filename = f"{event.message.id}.jpg"  
+        with open(image_filename, "wb") as file:
+            file.write(image_data)
+        print(image_filename)
+
+        test = ocr_photo(f"https://6b88-140-115-126-172.ngrok-free.app/getfile/{event.message.id}.jpg")
+        #test = ocr_photo(f"https://6b88-140-115-126-172.ngrok-free.app/{event.message.id}.jpg")
+        
+        record_id = save_record_to_database(userId, test)
+        save_record_detail_to_db(record_id, test)
+        print('圖片儲存完成！')                   
 
         # 回覆訊息
         line_bot_api.reply_message(event.reply_token, TextSendMessage(text=f"local image path：{image_filename}"))
-    # # line user id
-    # userId = event.source.user_id
-    # tk = event.reply_token            # 取得回傳訊息的 Token
-    # print(event)
-
-    # msgID = event.message.id  # 取得訊息 id
-    # print(msgID)
-
-    # message_content = line_bot_api.get_message_content(msgID)
-    # print(message_content)
-    # try:
-    #     with open(f'{msgID}.jpg', 'wb') as fd:
-    #         fd.write(message_content.iter_content())
-    #     print("Image saved successfully.")
-    # except Exception as e:
-    #     print(f"Error saving image: {e}")
-    #save_image_to_database(msgID)
-    #reply = str(ocr_photo(f"https://5ca0-140-115-126-172.ngrok-free.app/getfile/{msgID}.jpg"))
-        # reply = '收到圖片!'
-        # print(reply)
-        # line_bot_api.reply_message(event.reply_token, TextSendMessage(text=str(reply)))
-
-
-
 
 @handler.add(MessageEvent, message=TextMessage)
 def handling_message(event):
@@ -158,7 +136,6 @@ def handling_message(event):
         
         user = User(userId)
         agent = Agent("MedicationAssistant")
-
         # get history chatlog
         historyChatlog = Chat.getHistoryChatlog(user,agent)
 
@@ -189,6 +166,4 @@ def handling_message(event):
         userMessage = str(responseContent)
 
         line_bot_api.reply_message(event.reply_token, TextSendMessage(text=userMessage))
-
-
 
