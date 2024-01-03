@@ -44,7 +44,6 @@ async def startup_event():
     scheduler.add_job(send_random_image_task, 'interval', minutes=2)
     scheduler.start()
 
-
 # Line Bot config
 @app.get("/")
 async def root():
