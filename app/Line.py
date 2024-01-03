@@ -8,7 +8,9 @@ from linebot.exceptions import InvalidSignatureError
 from linebot.models import MessageEvent, TextMessage, TextSendMessage, ImageMessage,ImageSendMessage
 
 
+from app.MedicationHandler import MedicationHandler
 import os
+import requests
 
 from app.Role import User,Agent
 import app.Chat as Chat
@@ -32,6 +34,7 @@ scheduler = AsyncIOScheduler()
 # 設定靜態文件目錄，這樣 FastAPI 才知道從哪裡提供文件
 app.mount("/static", StaticFiles(directory="static"), name="static")
 
+rag_endpoint = os.environ.get("RAG_ENDPOINT")
 line_bot_api = LineBotApi(os.environ.get("LINE_ACCESS_TOKEN"))
 handler = WebhookHandler(os.environ.get("LINE_CHANNEL_SECRET")) 
 
@@ -41,7 +44,7 @@ def check_and_send_medication_reminders():
     # 要執行的任務
     current_hour = datetime.datetime.now().hour
     # 根據當前時間點（8, 12, 18, 24）確定是否需要發送提醒
-    if current_hour in [8, 12, 18, 24]:
+    if current_hour in [7, 11, 17, 23]:
         # 獲取用藥提醒
         get_medication_reminders()
         pass
@@ -50,7 +53,7 @@ def check_and_send_medication_reminders():
 async def startup_event():
     # 在啟動時添加定時任務
     # 每小時執行一次檢查
-    scheduler.add_job(check_and_send_medication_reminders,'cron', hour='8,12,18,24')
+    scheduler.add_job(check_and_send_medication_reminders,'cron', hour='7,11,17,23')
     scheduler.start()
 
 # Line Bot config
@@ -88,27 +91,29 @@ def shitt(event):
         # line user id
         userId = event.source.user_id
         print('userId: ', userId)
+        reply = '藥單儲存完成！'
+        line_bot_api.reply_message(event.reply_token, TextSendMessage(text=reply))
 
         # handle image message
-        image_message_content = line_bot_api.get_message_content(event.message.id)
-        image_data = image_message_content.content
+        # image_message_content = line_bot_api.get_message_content(event.message.id)
+        # image_data = image_message_content.content
 
-        # 存儲圖片到本地端
-        image_filename = f"static/{event.message.id}.jpg"  
-        #image_filename = f"{event.message.id}.jpg"  
-        with open(image_filename, "wb") as file:
-            file.write(image_data)
-        print(image_filename)
+        # # 存儲圖片到本地端
+        # image_filename = f"static/{event.message.id}.jpg"  
+        # #image_filename = f"{event.message.id}.jpg"  
+        # with open(image_filename, "wb") as file:
+        #     file.write(image_data)
+        # print(image_filename)
 
-        test = ocr_photo(f"https://6b88-140-115-126-172.ngrok-free.app/getfile/{event.message.id}.jpg")
-        #test = ocr_photo(f"https://6b88-140-115-126-172.ngrok-free.app/{event.message.id}.jpg")
+        # test = ocr_photo(f"https://6b88-140-115-126-172.ngrok-free.app/getfile/{event.message.id}.jpg")
+        # #test = ocr_photo(f"https://6b88-140-115-126-172.ngrok-free.app/{event.message.id}.jpg")
         
-        record_id = save_record_to_database(userId, test)
-        save_record_detail_to_db(record_id, test)
-        print('圖片儲存完成！')                   
+        # record_id = save_record_to_database(userId, test)
+        # save_record_detail_to_db(record_id, test)
+        # print('圖片儲存完成！')                   
 
         # 回覆訊息
-        line_bot_api.reply_message(event.reply_token, TextSendMessage(text=f"local image path：{image_filename}"))
+        #line_bot_api.reply_message(event.reply_token, TextSendMessage(text=f"local image path：{image_filename}"))
     # # line user id
     # userId = event.source.user_id
     # tk = event.reply_token            # 取得回傳訊息的 Token
@@ -133,7 +138,6 @@ def shitt(event):
 
 
 
-
 @handler.add(MessageEvent, message=TextMessage)
 def handling_message(event):
     if isinstance(event.message, TextMessage):
@@ -143,8 +147,22 @@ def handling_message(event):
         # line user input message        
         userMessage = event.message.text
 
+        if '藥' in userMessage:
+            # get side effect by user id     
+            sideEffectMessage = MedicationHandler().get_side_effect_message_by_user_id(str(userId))
+            
+            userMessage = userMessage + sideEffectMessage
+        
+        else:
+            argSchema = requests.get(f'{rag_endpoint}/{userMessage}').text
+            userMessage = f"""{userMessage}
+            Use the following pieces of context to answer the question at the end. If you don't know the answer, just say that you don't know, don't try to make up an answer. Keep the answer as concise as possible.
+            You must respond according to the following schema:
+            {argSchema}
+            """
+        
         user = User(userId)
-        agent = Agent("facilator")
+        agent = Agent("MedicationAssistant")
         # get history chatlog
         historyChatlog = Chat.getHistoryChatlog(user,agent)
 
@@ -175,4 +193,3 @@ def handling_message(event):
         userMessage = str(responseContent)
 
         line_bot_api.reply_message(event.reply_token, TextSendMessage(text=userMessage))
-

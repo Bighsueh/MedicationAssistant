@@ -50,7 +50,7 @@
 # random_image_url = random.choice(image_urls)
 
 # # 要發送的文字訊息
-# text_message = "這是今天的隨機圖片"
+# text_message = "用藥提醒 Genclone, 每次劑量: 1 "
 
 # # 發送隨機選擇的圖片
 # send_image(token, user_id, random_image_url, text_message)
@@ -161,8 +161,8 @@ image_urls = [
 # reminders = get_medication_reminders(user_id)
 
 get_medication_reminders()
-# # 為每個提醒發送Line消息
-# for trade_name, dose_per_time in reminders:
-#     random_image_url = random.choice(image_urls)
-#     text_message = f"提醒用藥: {trade_name}, 每次劑量: {dose_per_time}"
-#     send_image(token, 'U88a6808255645177d906c8c49880fe25', random_image_url, text_message)
+# 為每個提醒發送Line消息
+for trade_name, dose_per_time in reminders:
+    random_image_url = random.choice(image_urls)
+    text_message = f"提醒用藥: {trade_name}, 每次劑量: {dose_per_time}"
+    send_image(token, 'U88a6808255645177d906c8c49880fe25', random_image_url, text_message)

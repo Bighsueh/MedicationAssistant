@@ -12,6 +12,7 @@ services:
       LINE_CHANNEL_SECRET: "95f8ea74a89132626f6756564aa977ec"
       GPT_API_URL: "https://model.hsueh.tw/callapi/chatGPT"
       DATABASE_URL: "postgresql://postgres:1234@140.115.126.110:5432/postgres"
+      RAG_ENDPOINT: "http://ml.hsueh.tw:8000"
       #DATABASE_URL: postgresql://postgres:1234@localhost:5432/aitest
       
     volumes:

@@ -3,7 +3,7 @@ import os
 
 class PostgreSQLConnector:
     def __init__(self):
-        self.db_url = 'postgresql://postgres:1234@140.115.126.110:5432/postgres'
+        self.db_url =  os.environ.get('DATABASE_URL')
         self.conn = None
         self.cursor = None
 
