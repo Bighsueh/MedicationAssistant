@@ -8,10 +8,11 @@ services:
       MONGODB_HOST: "line_mongodb_container"
       MONGODB_DATABASE: "conversationdb"
       MONGODB_COLLECTION: "learning_companion"
-      LINE_ACCESS_TOKEN: "owrG9RPGLQp700dvg83WpB/bkM47ceRcAykEirV2J3XZpj3OsZoqW7n8DxFFniPjRWeDw6FWRrEnJyR7BII4NDgdelCMicIHS55CXdEG+7oOIYwmWAIwBN1T1CKJ8HHFuGvpYt978UxWHiwACqrneAdB04t89/1O/w1cDnyilFU="
-      LINE_CHANNEL_SECRET: "762d42bc5fbad7f677d85b46aa8a5502"
+      LINE_ACCESS_TOKEN: "3Vse/GaAdqdZ2gDP8QykIEn0aQMnxiCI8hpR+JZK4tUA/d11KWjcl5MgeurvAklyBKft8Bl2Vh0h1k/tsniAmyrKZVGekwCZGaxTvPqnIFA5Hk8IdM3HpSxKWfM0ylAcMfDH9rxbJttDdDnKF1ccGAdB04t89/1O/w1cDnyilFU="
+      LINE_CHANNEL_SECRET: "e53cbac7c9c923fd3c18fc49ba43db3a"
       GPT_API_URL: "https://model.hsueh.tw/callapi/chatGPT"
       DATABASE_URL: "postgresql://postgres:1234@140.115.126.110:5432/postgres"
+      RAG_ENDPOINT: "http://ml.hsueh.tw:8000"
       
     volumes:
       - ./main.py:/app/main.py
