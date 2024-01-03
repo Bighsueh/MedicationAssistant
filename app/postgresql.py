@@ -58,11 +58,12 @@ class MedicationRecord(Base):
     __tablename__ = "medication_records"
 
     record_id = Column(BigInteger, primary_key=True, autoincrement=True, index=True)
+    user_id = Column(String(50))
     redate = Column(Date, default=None)
     pres_hosp = Column(String(255), default=None)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), onupdate=func.now())
-    medication_record_details = relationship("MedicationRecordDetail", back_populates="medication_record")
+    #medication_record_details = relationship("MedicationRecordDetail", back_populates="medication_record")
 
 class MedicationRecordDetail(Base):
     __tablename__ = "medication_record_detail"
@@ -71,10 +72,16 @@ class MedicationRecordDetail(Base):
     record_id = Column(BigInteger, ForeignKey("medication_records.record_id"))
     trade_name = Column(String(255), default=None)
     generic_name = Column(String(255), default=None)
-    dose = Column(String(255), default=None)
+    # dose = Column(String(255), default=None)
     dose_per_unit = Column(String(255), default=None)
-    daily_dose = Column(String(255), default=None)
-    freq = Column(String(255), default=None)
+    dose_per_time = Column(String(255), default=None)
+    dose_per_day = Column(String(255), default=None)
+    # freq = Column(String(255), default=None)
+    day_limit = Column(String(255), default=None)
+    morning =  Column(bool, default=False)
+    noon = Column(bool, default=False)
+    night = Column(bool, default=False)
+    bed = Column(bool, default=False)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), onupdate=func.now())
     medication_record = relationship("MedicationRecord", back_populates="medication_record_details")
